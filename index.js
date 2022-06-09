@@ -10,29 +10,56 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _Snake_instances, _Snake_level, _Snake_step, _Snake_snake, _Snake_context, _Snake_canvasSize, _Snake_timer, _Snake_spead, _Snake_currentDirection, _Snake_target, _Snake_calcTarget, _Snake_paintTarget, _Snake_refreshCanvas, _Snake_paintSnake, _Snake_calcNextStep;
+var _Snake_instances, _Snake_step, _Snake_snake, _Snake_nextStep, _Snake_context, _Snake_canvasSize, _Snake_timer, _Snake_spead, _Snake_currentDirection, _Snake_target, _Snake_trottle, _Snake_calcTarget, _Snake_paintTarget, _Snake_refreshCanvas, _Snake_paintSnake, _Snake_calcNextStep, _Snake_makeMove, _Snake_keyboardNav, _Snake_targetHit, _Snake_gameOver, _Snake_hitItself, _Snake_setStatus;
 class Snake {
-    constructor(step, canvasSize) {
+    constructor(canvasSize) {
         _Snake_instances.add(this);
-        _Snake_level.set(this, void 0);
+        //privat values
         _Snake_step.set(this, void 0);
         _Snake_snake.set(this, void 0);
+        _Snake_nextStep.set(this, void 0);
         _Snake_context.set(this, void 0);
         _Snake_canvasSize.set(this, void 0);
         _Snake_timer.set(this, void 0);
         _Snake_spead.set(this, void 0);
         _Snake_currentDirection.set(this, void 0);
         _Snake_target.set(this, void 0);
-        __classPrivateFieldSet(this, _Snake_step, step, "f");
+        _Snake_trottle.set(this, void 0);
+        this.status = 'idle';
+        this.score = 0;
+        this.keyboardCommands = {
+            goLeft: 'KeyA',
+            goRight: 'KeyD',
+            goUp: 'KeyW',
+            goDown: 'KeyS',
+            stop: 'Space',
+            start: 'Enter',
+        };
+        __classPrivateFieldSet(this, _Snake_step, 50, "f");
         __classPrivateFieldSet(this, _Snake_context, null, "f");
-        __classPrivateFieldSet(this, _Snake_snake, [{ x: 0, y: 0 }, { x: step, y: 0 }, { x: step * 2, y: 0 }], "f");
-        __classPrivateFieldSet(this, _Snake_canvasSize, canvasSize, "f");
+        __classPrivateFieldSet(this, _Snake_snake, [{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 100, y: 0 }], "f");
+        __classPrivateFieldSet(this, _Snake_nextStep, null, "f");
+        __classPrivateFieldSet(this, _Snake_canvasSize, (() => {
+            switch (canvasSize) {
+                case 'xs':
+                    return 500;
+                case 'sm':
+                    return 750;
+                case 'md':
+                    return 1000;
+                case 'lg':
+                    return 1500;
+                case 'xl':
+                    return 2000;
+            }
+        })(), "f");
         __classPrivateFieldSet(this, _Snake_timer, null, "f");
         __classPrivateFieldSet(this, _Snake_spead, 100, "f");
         __classPrivateFieldSet(this, _Snake_currentDirection, 'right', "f");
-        __classPrivateFieldSet(this, _Snake_level, 1, "f");
         __classPrivateFieldSet(this, _Snake_target, null, "f");
+        __classPrivateFieldSet(this, _Snake_trottle, false, "f");
     }
+    //puclic methods
     paintCanvas(width) {
         const canvas = document.createElement('canvas');
         canvas.setAttribute('width', __classPrivateFieldGet(this, _Snake_canvasSize, "f").toString());
@@ -53,31 +80,37 @@ class Snake {
             return;
         if (curDirection === 'down' && newDirection === 'up')
             return;
+        if (__classPrivateFieldGet(this, _Snake_trottle, "f"))
+            return;
+        __classPrivateFieldSet(this, _Snake_trottle, true, "f");
+        setTimeout(() => __classPrivateFieldSet(this, _Snake_trottle, false, "f"), __classPrivateFieldGet(this, _Snake_spead, "f"));
         __classPrivateFieldSet(this, _Snake_currentDirection, newDirection, "f");
     }
     start() {
         if (__classPrivateFieldGet(this, _Snake_timer, "f") !== null)
             return;
+        __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_keyboardNav).call(this);
         __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_calcTarget).call(this);
-        __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_paintTarget).call(this);
         __classPrivateFieldSet(this, _Snake_timer, setInterval(() => {
+            __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_targetHit).call(this);
             __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_calcNextStep).call(this);
+            __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_hitItself).call(this);
+            __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_makeMove).call(this);
             __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_refreshCanvas).call(this);
             __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_paintTarget).call(this);
             __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_paintSnake).call(this);
         }, __classPrivateFieldGet(this, _Snake_spead, "f")), "f");
+        __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_setStatus).call(this, 'continuing');
     }
     stop() {
         if (!__classPrivateFieldGet(this, _Snake_timer, "f"))
             return;
         clearInterval(__classPrivateFieldGet(this, _Snake_timer, "f"));
         __classPrivateFieldSet(this, _Snake_timer, null, "f");
-    }
-    get getLevel() {
-        return __classPrivateFieldGet(this, _Snake_level, "f");
+        __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_setStatus).call(this, 'pause');
     }
 }
-_Snake_level = new WeakMap(), _Snake_step = new WeakMap(), _Snake_snake = new WeakMap(), _Snake_context = new WeakMap(), _Snake_canvasSize = new WeakMap(), _Snake_timer = new WeakMap(), _Snake_spead = new WeakMap(), _Snake_currentDirection = new WeakMap(), _Snake_target = new WeakMap(), _Snake_instances = new WeakSet(), _Snake_calcTarget = function _Snake_calcTarget() {
+_Snake_step = new WeakMap(), _Snake_snake = new WeakMap(), _Snake_nextStep = new WeakMap(), _Snake_context = new WeakMap(), _Snake_canvasSize = new WeakMap(), _Snake_timer = new WeakMap(), _Snake_spead = new WeakMap(), _Snake_currentDirection = new WeakMap(), _Snake_target = new WeakMap(), _Snake_trottle = new WeakMap(), _Snake_instances = new WeakSet(), _Snake_calcTarget = function _Snake_calcTarget() {
     const random = () => Math.floor(Math.random() * (__classPrivateFieldGet(this, _Snake_canvasSize, "f") / __classPrivateFieldGet(this, _Snake_step, "f"))) * __classPrivateFieldGet(this, _Snake_step, "f");
     __classPrivateFieldSet(this, _Snake_target, { x: random(), y: random() }, "f");
 }, _Snake_paintTarget = function _Snake_paintTarget() {
@@ -126,10 +159,67 @@ _Snake_level = new WeakMap(), _Snake_step = new WeakMap(), _Snake_snake = new We
             break;
     }
     ;
-    __classPrivateFieldGet(this, _Snake_snake, "f").push(nextStep);
+    __classPrivateFieldSet(this, _Snake_nextStep, nextStep, "f");
+}, _Snake_makeMove = function _Snake_makeMove() {
+    if (!__classPrivateFieldGet(this, _Snake_nextStep, "f"))
+        return;
+    __classPrivateFieldGet(this, _Snake_snake, "f").push(__classPrivateFieldGet(this, _Snake_nextStep, "f"));
     __classPrivateFieldGet(this, _Snake_snake, "f").shift();
+}, _Snake_keyboardNav = function _Snake_keyboardNav() {
+    window.addEventListener('keypress', (e) => {
+        switch (e.code) {
+            case this.keyboardCommands.goLeft:
+                this.changeDirection('left');
+                break;
+            case this.keyboardCommands.goRight:
+                this.changeDirection('right');
+                break;
+            case this.keyboardCommands.goUp:
+                this.changeDirection('up');
+                break;
+            case this.keyboardCommands.goDown:
+                this.changeDirection('down');
+                break;
+            // case this.keyboardCommands.start: 
+            //     console.log('enter')
+            //     this.start();
+            //     break;
+            // case this.keyboardCommands.stop: 
+            // console.log('space')
+            //     this.stop();
+            //     break;
+        }
+    });
+}, _Snake_targetHit = function _Snake_targetHit() {
+    if (!__classPrivateFieldGet(this, _Snake_target, "f"))
+        return;
+    const snakeHead = __classPrivateFieldGet(this, _Snake_snake, "f")[__classPrivateFieldGet(this, _Snake_snake, "f").length - 1];
+    const target = __classPrivateFieldGet(this, _Snake_target, "f");
+    if (snakeHead.x === target.x && snakeHead.y === target.y) {
+        __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_calcTarget).call(this);
+        this.score++;
+        console.log(this.score);
+        __classPrivateFieldGet(this, _Snake_snake, "f").unshift({ x: __classPrivateFieldGet(this, _Snake_snake, "f")[0].x, y: __classPrivateFieldGet(this, _Snake_snake, "f")[0].y });
+    }
+}, _Snake_gameOver = function _Snake_gameOver() {
+    if (!__classPrivateFieldGet(this, _Snake_timer, "f") || !__classPrivateFieldGet(this, _Snake_context, "f"))
+        return;
+    clearInterval(__classPrivateFieldGet(this, _Snake_timer, "f"));
+    __classPrivateFieldSet(this, _Snake_timer, null, "f");
+    __classPrivateFieldGet(this, _Snake_context, "f").fillStyle = 'pink';
+    __classPrivateFieldGet(this, _Snake_context, "f").fillRect(0, 0, __classPrivateFieldGet(this, _Snake_canvasSize, "f"), __classPrivateFieldGet(this, _Snake_canvasSize, "f"));
+    __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_setStatus).call(this, 'idle');
+}, _Snake_hitItself = function _Snake_hitItself() {
+    const isHit = __classPrivateFieldGet(this, _Snake_snake, "f").some(point => {
+        if (!__classPrivateFieldGet(this, _Snake_nextStep, "f"))
+            return;
+        return point.x === __classPrivateFieldGet(this, _Snake_nextStep, "f").x && point.y === __classPrivateFieldGet(this, _Snake_nextStep, "f").y;
+    });
+    isHit && __classPrivateFieldGet(this, _Snake_instances, "m", _Snake_gameOver).call(this);
+}, _Snake_setStatus = function _Snake_setStatus(newStatus) {
+    this.status = newStatus;
 };
-const snakeGame = new Snake(50, 2000);
+const snakeGame = new Snake('xl');
 const game = snakeGame.paintCanvas('25%');
 const root = document.getElementById('root');
 root === null || root === void 0 ? void 0 : root.appendChild(game);
@@ -140,21 +230,4 @@ startButton === null || startButton === void 0 ? void 0 : startButton.addEventLi
 const stopButton = document.getElementById('stop');
 stopButton === null || stopButton === void 0 ? void 0 : stopButton.addEventListener('click', () => {
     snakeGame.stop();
-});
-////
-const leftButton = document.getElementById('left');
-leftButton === null || leftButton === void 0 ? void 0 : leftButton.addEventListener('click', () => {
-    snakeGame.changeDirection('left');
-});
-const rightButton = document.getElementById('right');
-rightButton === null || rightButton === void 0 ? void 0 : rightButton.addEventListener('click', () => {
-    snakeGame.changeDirection('right');
-});
-const upButton = document.getElementById('up');
-upButton === null || upButton === void 0 ? void 0 : upButton.addEventListener('click', () => {
-    snakeGame.changeDirection('up');
-});
-const downButton = document.getElementById('down');
-downButton === null || downButton === void 0 ? void 0 : downButton.addEventListener('click', () => {
-    snakeGame.changeDirection('down');
 });
